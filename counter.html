@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Inter, system-ui, sans-serif;
+        background: transparent;
+      }
+
+      #counter {
+        display: flex;
+        gap: 28px;
+      }
+
+      .unit {
+        text-align: center;
+      }
+
+      .value {
+        font-size: 42px;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .label {
+        font-size: 14px;
+        opacity: 0.6;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="counter"></div>
+
+    <script>
+      const startDate = new Date("2025-11-08");
+
+      function calculate() {
+        const now = new Date();
+
+        let years = now.getFullYear() - startDate.getFullYear();
+        let months = now.getMonth() - startDate.getMonth();
+        let days = now.getDate() - startDate.getDate();
+
+        if (days < 0) {
+          months--;
+          const prevMonth = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            0,
+          ).getDate();
+          days += prevMonth;
+        }
+
+        if (months < 0) {
+          years--;
+          months += 12;
+        }
+
+        const container = document.getElementById("counter");
+        container.innerHTML = "";
+
+        function add(value, label) {
+          const div = document.createElement("div");
+          div.className = "unit";
+          div.innerHTML = `<div class="value">${value}</div>
+       <div class="label">${label}</div>`;
+          container.appendChild(div);
+        }
+
+        if (years > 0) add(years, "anys");
+        if (months > 0) add(months, "mesos");
+        if (days > 0) add(days, "dies");
+
+        if (years === 0 && months === 0 && days === 0) {
+          add(0, "dies");
+        }
+      }
+
+      calculate();
+
+      setInterval(calculate, 60 * 60 * 1000);
+    </script>
+  </body>
+</html>
