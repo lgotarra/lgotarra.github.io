@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Búsqueda de Vivienda | Dashboard</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --secondary: #16a34a;
+        --dark: #1e293b;
+        --gray: #64748b;
+        --light: #f8fafc;
+        --border: #e2e8f0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        height: 100%;
+      }
+
+      body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: var(--light);
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .page-wrapper {
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+      }
+
+      .header {
+        margin-bottom: 48px;
+      }
+
+      .header h1 {
+        font-size: 2.2rem;
+        color: var(--dark);
+        margin-bottom: 12px;
+        font-weight: 800;
+      }
+
+      .header p {
+        font-size: 1.05rem;
+        color: var(--gray);
+        max-width: 500px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+
+      .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 40px 32px;
+        text-decoration: none;
+        color: var(--dark);
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 16px 16px 0 0;
+        transition: height 0.3s ease;
+      }
+
+      .card-badalona::before {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      }
+
+      .card-alternatives::before {
+        background: linear-gradient(135deg, var(--secondary), #15803d);
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        border-color: transparent;
+      }
+
+      .card:hover::before {
+        height: 6px;
+      }
+
+      .card-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .card-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .card-description {
+        font-size: 0.92rem;
+        color: var(--gray);
+        line-height: 1.5;
+        margin-bottom: 20px;
+      }
+
+      .card-badge {
+        display: inline-block;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+
+      .card-badalona .card-badge {
+        background: #dbeafe;
+        color: var(--primary);
+      }
+
+      .card-alternatives .card-badge {
+        background: #dcfce7;
+        color: var(--secondary);
+      }
+
+      .card-arrow {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateX(-8px);
+      }
+
+      .card:hover .card-arrow {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .card-arrow svg {
+        width: 16px;
+        height: 16px;
+        stroke: var(--gray);
+      }
+
+      footer {
+        margin-top: 48px;
+        color: var(--gray);
+        font-size: 0.82rem;
+      }
+
+      @media (max-width: 600px) {
+        .header h1 {
+          font-size: 1.6rem;
+        }
+        .cards-container {
+          grid-template-columns: 1fr;
+        }
+        .card {
+          padding: 32px 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <div class="header">
+        <h1>🏠 Búsqueda de Vivienda</h1>
+        <p>Dashboards interactivos con análisis de zonas, precios, transporte y simulación hipotecaria</p>
+      </div>
+
+      <div class="cards-container">
+        <a href="badalona.html" class="card card-badalona">
+          <div class="card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </div>
+          <span class="card-icon">🏙️</span>
+          <div class="card-title">Badalona</div>
+          <p class="card-description">Análisis detallado de zonas en Badalona: Coll i Pujol, Progrés–Pep Ventura, Centre, transporte L2 y simulador hipotecario.</p>
+          <span class="card-badge">Análisis principal</span>
+        </a>
+
+        <a href="alternatives.html" class="card card-alternatives">
+          <div class="card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </div>
+          <span class="card-icon">🗺️</span>
+          <div class="card-title">Alternativas</div>
+          <p class="card-description">Barcelona ciudad (La Sagrera, Clot, Horta) y municipios cercanos (Santa Coloma, Montcada, Cerdanyola, Sant Adrià).</p>
+          <span class="card-badge">BCN + alrededores</span>
+        </a>
+      </div>
+
+      <footer>
+        <p>Datos orientativos — mayo 2026 | Protegido con contraseña 🔒</p>
+      </footer>
+    </div>
+  </body>
+</html>
