@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badalona - Búsqueda de Vivienda | Dashboard Interactivo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --secondary: #16a34a;
+            --secondary-light: #dcfce7;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .section h3 {
+            font-size: 1.2rem;
+            margin: 20px 0 12px;
+            color: var(--dark);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card-header {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--dark);
+        }
+
+        .ranking-card {
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            background: var(--primary-light);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .ranking-card.secondary {
+            border-left-color: var(--secondary);
+            background: var(--secondary-light);
+        }
+
+        .ranking-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .ranking-card.secondary .ranking-number {
+            color: var(--secondary);
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            z-index: 1;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+
+        .chart-container-sm {
+            position: relative;
+            height: 280px;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--primary-light);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        tr:hover {
+            background: var(--light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-green { background: var(--secondary-light); color: var(--secondary); }
+        .badge-yellow { background: var(--warning-light); color: var(--warning); }
+        .badge-red { background: var(--danger-light); color: var(--danger); }
+        .badge-blue { background: var(--primary-light); color: var(--primary); }
+
+        .semaforo {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .semaforo-item {
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .semaforo-green { background: #dcfce7; border: 2px solid #16a34a; }
+        .semaforo-yellow { background: #fef9c3; border: 2px solid #ca8a04; }
+        .semaforo-orange { background: #ffedd5; border: 2px solid #ea580c; }
+        .semaforo-red { background: #fee2e2; border: 2px solid #dc2626; }
+
+        .mortgage-calc {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 24px;
+        }
+
+        .mortgage-result {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .mortgage-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .mortgage-item .value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .mortgage-item .label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 4px;
+        }
+
+        .recommendation-box {
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            background: linear-gradient(135deg, var(--primary-light), white);
+        }
+
+        .recommendation-box h4 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+
+        .priority-list {
+            list-style: none;
+            counter-reset: priority;
+        }
+
+        .priority-list li {
+            counter-increment: priority;
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .priority-list li::before {
+            content: counter(priority);
+            background: var(--primary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 12px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .resources-section a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .resources-section a:hover {
+            text-decoration: underline;
+        }
+
+        .formula {
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            margin: 12px 0;
+            font-size: 1rem;
+        }
+
+        .comparison-bar {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            gap: 10px;
+        }
+
+        .comparison-bar .label {
+            width: 160px;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .comparison-bar .bar-bg {
+            flex: 1;
+            height: 24px;
+            background: #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-bar .bar-fill {
+            height: 100%;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 0.75rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .tab-container {
+            margin: 16px 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: var(--light);
+            border-radius: 8px;
+        }
+
+        .info-item .icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .info-item .text {
+            font-size: 0.85rem;
+        }
+
+        .info-item .text strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: 1fr; }
+            .semaforo { grid-template-columns: repeat(2, 1fr); }
+            header h1 { font-size: 1.8rem; }
+            .container { padding: 12px; }
+            .section { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 Badalona — Búsqueda de Vivienda</h1>
+            <p>Dashboard interactivo con análisis de zonas, precios, transporte y simulación hipotecaria</p>
+        </header>
+
+        <!-- EXECUTIVE SUMMARY -->
+        <div class="section">
+            <h2>Resumen Ejecutivo</h2>
+            <div class="grid-2">
+                <div class="ranking-card">
+                    <div class="ranking-number">#1</div>
+                    <strong>Coll i Pujol / Pompeu Fabra norte / Centre alto</strong>
+                    <p style="margin-top:8px; color: var(--gray);">Mejor para ir al trabajo, muy buena para Barcelona y aceptable para Terrassa.</p>
+                    <span class="badge badge-blue">Mejor encaje logístico</span>
+                </div>
+                <div class="ranking-card secondary">
+                    <div class="ranking-number">#2</div>
+                    <strong>Progrés – Pep Ventura (zona alta hacia Pompeu Fabra)</strong>
+                    <p style="margin-top:8px; color: var(--gray);">Mejor equilibrio precio/transporte, algo peor para ir al trabajo.</p>
+                    <span class="badge badge-green">Mejor compra racional</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP -->
+        <div class="section">
+            <h2>Mapa de Ubicaciones</h2>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div> Trabajo</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;"></div> Familia (Barcelona)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#ea580c;"></div> Pareja (Terrassa)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#2563eb;"></div> Zona 1: Coll i Pujol / Pompeu Fabra</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div> Zona 2: Progrés – Pep Ventura</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#0891b2;"></div> Metro L2</div>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- ZONE COMPARISON -->
+        <div class="section">
+            <h2>Comparativa de Zonas</h2>
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('overview')">Visión General</button>
+                    <button class="tab-btn" onclick="switchTab('zone1')">Coll i Pujol / Centre</button>
+                    <button class="tab-btn" onclick="switchTab('zone2')">Progrés – Pep Ventura</button>
+                </div>
+                <div id="tab-overview" class="tab-content active">
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+                <div id="tab-zone1" class="tab-content">
+                    <h3>Coll i Pujol / Pompeu Fabra / Centre alto</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="icon">🚇</div>
+                            <div class="text"><strong>Transporte</strong>L2 Pompeu Fabra + Rodalies accesible</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">💼</div>
+                            <div class="text"><strong>Acceso al trabajo</strong>Muy bueno / excelente</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">👨‍👩‍👧</div>
+                            <div class="text"><strong>Acceso a Barcelona</strong>Muy bueno (L2 + transbordo L5)</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">❤️</div>
+                            <div class="text"><strong>Acceso a Terrassa</strong>Bueno (L2 + FGC S1/Rodalies)</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">🏥</div>
+                            <div class="text"><strong>Sanidad</strong>CAP Doctor Robert y servicios cercanos</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">🛒</div>
+                            <div class="text"><strong>Comercio</strong>Muy buena oferta de proximidad</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">🚗</div>
+                            <div class="text"><strong>Aparcamiento</strong>Difícil; recomendable parking privado</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">📊</div>
+                            <div class="text"><strong>IST Socioeconómico</strong>122,1 (muy alto, media Cat. = 100)</div>
+                        </div>
+                    </div>
+                    <h4 style="margin-top:20px;">Puntos fuertes</h4>
+                    <p>Mejor encaje con trabajo, excelente transporte, muchísimos servicios, buena reventa, mejor perfil socioeconómico.</p>
+                    <h4 style="margin-top:12px;">Puntos débiles</h4>
+                    <p>Precio más alto, aparcamiento difícil, fincas antiguas, posible falta de ascensor, más densidad/ruido.</p>
+                </div>
+                <div id="tab-zone2" class="tab-content">
+                    <h3>Progrés – Pep Ventura</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="icon">🚇</div>
+                            <div class="text"><strong>Transporte</strong>L2 Pep Ventura; Gorg (L2 + L10 Nord + Tram)</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">💼</div>
+                            <div class="text"><strong>Acceso al trabajo</strong>Correcto, menos directo</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">👨‍👩‍👧</div>
+                            <div class="text"><strong>Acceso a Barcelona</strong>Muy bueno (L2 + transbordo L5)</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">❤️</div>
+                            <div class="text"><strong>Acceso a Terrassa</strong>Bueno, algo menos directo</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">🏥</div>
+                            <div class="text"><strong>Sanidad</strong>CAP Progrés-Raval / CAP Gorg</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">🛒</div>
+                            <div class="text"><strong>Comercio</strong>Buena oferta + playa cerca</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">🚗</div>
+                            <div class="text"><strong>Aparcamiento</strong>Complicado, algo más flexible</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="icon">📊</div>
+                            <div class="text"><strong>IST Socioeconómico</strong>Medio-alto (dentro de zona buena)</div>
+                        </div>
+                    </div>
+                    <h4 style="margin-top:20px;">Puntos fuertes</h4>
+                    <p>Mejor equilibrio precio/transporte, L2 cerca, playa próxima, buena oferta de pisos con balcón/terraza.</p>
+                    <h4 style="margin-top:12px;">Puntos débiles</h4>
+                    <p>Peor acceso al trabajo, fincas antiguas, producto reformado puede estar inflado.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCESS COMPARISON -->
+        <div class="section">
+            <h2>Acceso a Ubicaciones de Referencia</h2>
+            <div class="grid-3" style="margin-bottom: 20px;">
+                <div class="card">
+                    <div class="card-header">💼 Trabajo</div>
+                    <p style="font-size:0.85rem;">C/ Molí de la Torre, 8<br>Badalona</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">👨‍👩‍👧 Familia</div>
+                    <p style="font-size:0.85rem;">C/ d'Entença, 163<br>Eixample, Barcelona</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">❤️ Pareja</div>
+                    <p style="font-size:0.85rem;">Av. Abat Marcet, 35<br>Terrassa</p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="accessChart"></canvas>
+            </div>
+        </div>
+
+        <!-- PRICING -->
+        <div class="section">
+            <h2>Precios por Zona y Tipología</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Comparativa de precios (€/m²)</h3>
+                    <div class="chart-container-sm">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3>Precio total por tipología</h3>
+                    <div class="chart-container-sm">
+                        <canvas id="priceBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Semáforo de Precio</h3>
+            <h4 style="font-size:0.95rem; margin: 12px 0 8px;">Progrés – Pep Ventura</h4>
+            <div class="semaforo">
+                <div class="semaforo-item semaforo-green"><strong>Buen precio</strong><br>≤ 3.600 €/m²</div>
+                <div class="semaforo-item semaforo-yellow"><strong>Normal</strong><br>3.600–4.200 €/m²</div>
+                <div class="semaforo-item semaforo-orange"><strong>Alto</strong><br>4.200–4.500 €/m²</div>
+                <div class="semaforo-item semaforo-red"><strong>Caro</strong><br>> 4.500 €/m²</div>
+            </div>
+            <h4 style="font-size:0.95rem; margin: 12px 0 8px;">Coll i Pujol / Pompeu Fabra / Centre</h4>
+            <div class="semaforo">
+                <div class="semaforo-item semaforo-green"><strong>Buen precio</strong><br>≤ 3.700 €/m²</div>
+                <div class="semaforo-item semaforo-yellow"><strong>Normal</strong><br>3.700–4.300 €/m²</div>
+                <div class="semaforo-item semaforo-orange"><strong>Alto</strong><br>4.300–4.700 €/m²</div>
+                <div class="semaforo-item semaforo-red"><strong>Caro</strong><br>> 4.700 €/m²</div>
+            </div>
+        </div>
+
+        <!-- MORTGAGE SIMULATOR -->
+        <div class="section">
+            <h2>Simulador de Hipoteca</h2>
+            <div class="mortgage-calc">
+                <h3 style="margin-top:0;">Hipótesis del cálculo</h3>
+                <div class="mortgage-result">
+                    <div class="mortgage-item">
+                        <div class="value">2,45%</div>
+                        <div class="label">Tipo fijo TIN</div>
+                    </div>
+                    <div class="mortgage-item">
+                        <div class="value">30 años</div>
+                        <div class="label">Plazo</div>
+                    </div>
+                    <div class="mortgage-item">
+                        <div class="value">80%</div>
+                        <div class="label">Financiación</div>
+                    </div>
+                    <div class="mortgage-item">
+                        <div class="value">25%</div>
+                        <div class="label">Ahorro inicial necesario</div>
+                    </div>
+                </div>
+                <div class="formula" style="margin-top:20px;">
+                    Cuota = P × r(1+r)ⁿ / [(1+r)ⁿ - 1] &nbsp; | &nbsp; r = 2,45% / 12 &nbsp; | &nbsp; n = 360 meses
+                </div>
+            </div>
+
+            <h3>Simulaciones por vivienda tipo</h3>
+            <div class="chart-container">
+                <canvas id="mortgageChart"></canvas>
+            </div>
+
+            <table style="margin-top:20px;">
+                <thead>
+                    <tr>
+                        <th>Zona</th>
+                        <th>Tipo</th>
+                        <th>Precio</th>
+                        <th>Ahorro necesario (25%)</th>
+                        <th>Hipoteca (80%)</th>
+                        <th>Cuota/mes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Progrés – Pep Ventura</td>
+                        <td>2 hab. + balcón</td>
+                        <td><strong>285.000 €</strong></td>
+                        <td>71.250 €</td>
+                        <td>228.000 €</td>
+                        <td><strong>895 €</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Progrés – Pep Ventura</td>
+                        <td>3 hab. + balcón</td>
+                        <td><strong>360.000 €</strong></td>
+                        <td>90.000 €</td>
+                        <td>288.000 €</td>
+                        <td><strong>1.130 €</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Coll i Pujol / Pompeu Fabra</td>
+                        <td>2 hab. + balcón</td>
+                        <td><strong>305.000 €</strong></td>
+                        <td>76.250 €</td>
+                        <td>244.000 €</td>
+                        <td><strong>958 €</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Coll i Pujol / Pompeu Fabra</td>
+                        <td>3 hab. + balcón</td>
+                        <td><strong>380.000 €</strong></td>
+                        <td>95.000 €</td>
+                        <td>304.000 €</td>
+                        <td><strong>1.193 €</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- INITIAL EFFORT -->
+        <div class="section">
+            <h2>Esfuerzo Inicial por Precio de Vivienda</h2>
+            <div class="chart-container-sm">
+                <canvas id="effortChart"></canvas>
+            </div>
+        </div>
+
+        <!-- SECURITY -->
+        <div class="section">
+            <h2>Seguridad y Criminalidad</h2>
+            <div class="grid-2">
+                <div>
+                    <div class="card">
+                        <div class="card-header">📊 Datos municipales (T4 2025)</div>
+                        <p style="font-size: 2rem; font-weight: 800; color: var(--dark);">14.901</p>
+                        <p style="color: var(--gray);">Infracciones penales registradas</p>
+                        <p style="margin-top:8px;"><span class="badge badge-green">-1,18% interanual</span></p>
+                        <p style="margin-top:12px; font-size:0.85rem; color: var(--gray);">Fuente: Ministerio del Interior vía EPData. Dato municipal, no desagregado por barrio.</p>
+                    </div>
+                </div>
+                <div>
+                    <h3>Percepción de riesgo por zona</h3>
+                    <div class="comparison-bar">
+                        <div class="label">Coll i Pujol / Centre</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:20%; background: #16a34a;">Bajo</div></div>
+                    </div>
+                    <div class="comparison-bar">
+                        <div class="label">Progrés – Pep Ventura</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:35%; background: #65a30d;">Bajo-medio</div></div>
+                    </div>
+                    <div class="comparison-bar">
+                        <div class="label">Gorg profundo</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:50%; background: #ca8a04;">Medio</div></div>
+                    </div>
+                    <div class="comparison-bar">
+                        <div class="label">Sant Roc / La Salut</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:80%; background: #dc2626;">Alto</div></div>
+                    </div>
+                    <p style="font-size:0.8rem; color: var(--gray); margin-top:12px;">⚠️ No existe índice oficial público por barrio. Esta es percepción basada en perfil socioeconómico y noticias.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOCIOECONOMIC -->
+        <div class="section">
+            <h2>Índice Socioeconómico Territorial (IST)</h2>
+            <div class="chart-container-sm">
+                <canvas id="istChart"></canvas>
+            </div>
+            <p style="font-size:0.85rem; color: var(--gray); margin-top:12px;">Fuente: Idescat. Base 100 = media catalana. El IST combina renta, nivel educativo y condiciones laborales.</p>
+        </div>
+
+        <!-- SERVICES -->
+        <div class="section">
+            <h2>Servicios y Vida Diaria</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Coll i Pujol / Pompeu Fabra / Centre</th>
+                        <th>Progrés – Pep Ventura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>🏥 CAP</td><td>CAP Doctor Robert</td><td>CAP Progrés-Raval / CAP Gorg</td></tr>
+                    <tr><td>🛒 Supermercados</td><td>Muy buena oferta</td><td>Buena/muy buena oferta</td></tr>
+                    <tr><td>🎓 Colegios</td><td>Muy buena disponibilidad</td><td>Buena disponibilidad</td></tr>
+                    <tr><td>🍽️ Restauración/ocio</td><td>Muy buena</td><td>Buena + playa/Pont del Petroli</td></tr>
+                    <tr><td>🚇 Transporte</td><td><span class="badge badge-blue">Excelente</span></td><td><span class="badge badge-green">Muy bueno</span></td></tr>
+                    <tr><td>🚗 Aparcamiento</td><td><span class="badge badge-red">Punto débil</span></td><td><span class="badge badge-yellow">Punto débil (algo menos)</span></td></tr>
+                    <tr><td>🏪 Comercio diario</td><td><span class="badge badge-blue">Excelente</span></td><td><span class="badge badge-green">Bueno/muy bueno</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FINAL RECOMMENDATION -->
+        <div class="section">
+            <h2>Recomendación Final</h2>
+            <div class="grid-2" style="margin-bottom:24px;">
+                <div class="recommendation-box">
+                    <h4>🏆 Mejor opción logística</h4>
+                    <p><strong>Coll i Pujol / Pompeu Fabra norte — 2 hab. + balcón, 55–65 m²</strong></p>
+                    <table style="margin:12px 0; font-size:0.85rem;">
+                        <tr><td>Precio ideal</td><td><strong>280.000–315.000 €</strong></td></tr>
+                        <tr><td>Máximo razonable</td><td>330.000–340.000 €</td></tr>
+                        <tr><td>€/m² objetivo</td><td>4.000–4.700 €/m²</td></tr>
+                        <tr><td>Cuota aprox.</td><td><strong>880–1.070 €/mes</strong></td></tr>
+                        <tr><td>Ahorro inicial</td><td>70.000–85.000 €</td></tr>
+                        <tr><td>Condición clave</td><td>Ascensor, balcón real, parking cerca</td></tr>
+                    </table>
+                </div>
+                <div class="recommendation-box" style="border-color: var(--secondary); background: linear-gradient(135deg, var(--secondary-light), white);">
+                    <h4 style="color: var(--secondary);">💰 Mejor equilibrio precio/zona</h4>
+                    <p><strong>Progrés–Pep Ventura alto — 2 hab. + balcón, 55–65 m²</strong></p>
+                    <table style="margin:12px 0; font-size:0.85rem;">
+                        <tr><td>Precio ideal</td><td><strong>250.000–285.000 €</strong></td></tr>
+                        <tr><td>Máximo razonable</td><td>300.000 €</td></tr>
+                        <tr><td>€/m² objetivo</td><td>3.800–4.500 €/m²</td></tr>
+                        <tr><td>Cuota aprox.</td><td><strong>785–942 €/mes</strong></td></tr>
+                        <tr><td>Ahorro inicial</td><td>62.500–75.000 €</td></tr>
+                        <tr><td>Condición clave</td><td>No alejarse de Pompeu Fabra/Martí Pujol</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <h3>Orden de búsqueda recomendado</h3>
+            <ol class="priority-list">
+                <li><strong>2 hab. + balcón en Coll i Pujol / Pompeu Fabra norte</strong> por 280.000–320.000 € — Mejor equilibrio vida diaria + trabajo</li>
+                <li><strong>2 hab. + balcón en Progrés alto</strong> por 250.000–285.000 € — Mejor equilibrio económico</li>
+                <li><strong>3 hab. + balcón en Progrés–Pep Ventura</strong> por 330.000–370.000 € — Más metros sin irte demasiado</li>
+                <li><strong>3 hab. + balcón en Centre/Pompeu Fabra</strong> por 360.000–400.000 € — Muy buena, pero solo si no está inflada</li>
+            </ol>
+
+            <div class="card" style="margin-top:20px; background: #fffbeb; border-color: #fbbf24;">
+                <div class="card-header">💡 Veredicto final</div>
+                <p>Tu punto dulce ahora mismo sería un <strong>2 habitaciones de 55–65 m² con balcón cerca de Pompeu Fabra / Coll i Pujol</strong>, por unos <strong>290.000–315.000 €</strong>, siempre que tenga ascensor o buena finca y posibilidad real de parking cerca. Si el precio se acerca a 340.000 €, debería ser un piso claramente superior.</p>
+            </div>
+        </div>
+
+        <!-- RESOURCES -->
+        <div class="section resources-section">
+            <h2>Recursos y Fuentes Utilizadas</h2>
+            
+            <h3>1. Datos socioeconómicos / IST</h3>
+            <table>
+                <thead><tr><th>Fuente</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="https://www.idescat.cat/pub/?by=ac&id=ist&lang=es&n=14034" target="_blank">Idescat — IST por agrupaciones censales</a></td><td>Datos oficiales IST</td></tr>
+                    <tr><td><a href="https://www.idescat.cat/pub/?geo=mun%3A080155&id=ist&lang=es&n=14034" target="_blank">Idescat — Badalona IST municipal</a></td><td>IST municipal</td></tr>
+                    <tr><td><a href="https://www.idescat.cat/novetats/?id=5323&lang=es" target="_blank">Idescat — Novedad IST 2022</a></td><td>Comparativa interna</td></tr>
+                    <tr><td><a href="https://govern.cat/govern/docs/NPist2022.pdf" target="_blank">Govern.cat — Nota PDF IST 2022</a></td><td>Tablas complementarias</td></tr>
+                </tbody>
+            </table>
+
+            <h3>2. Criminalidad y seguridad</h3>
+            <table>
+                <thead><tr><th>Fuente</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="https://www.epdata.es/datos/crimen-asesinatos-robos-secuestros-otros-delitos-registrados-cada-municipio/6/badalona/1239" target="_blank">EPData — Criminalidad Badalona</a></td><td>Infracciones penales municipales</td></tr>
+                    <tr><td><a href="https://www.icgc.cat/es/Herramientas-y-visores/Visores/Mapa-delincuencial" target="_blank">ICGC — Mapa delincuencial</a></td><td>Visor delitos por zona</td></tr>
+                    <tr><td><a href="https://www.lavanguardia.com/local/barcelones-nord/20260123/11447669/revuelta-vecinal-barrio-sant-roc-inseguridad-genera-asentamiento-autopista.html" target="_blank">La Vanguardia — Sant Roc</a></td><td>Noticias inseguridad percibida</td></tr>
+                </tbody>
+            </table>
+
+            <h3>3. Transporte público y movilidad</h3>
+            <table>
+                <thead><tr><th>Fuente</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="https://www.badalona.cat/ca/serveis-ajuntament/turisme/planifica/com-arribar" target="_blank">Ajuntament de Badalona — Cómo llegar</a></td><td>Metro, Rodalies, Tram</td></tr>
+                    <tr><td><a href="https://www.tmb.cat/es/barcelona/tmb-imetro/proximos-metros/-/lineametro/L2" target="_blank">TMB — Línea L2</a></td><td>Paradas y conexiones L2</td></tr>
+                    <tr><td><a href="https://www.fgc.cat/es/red-fgc/l-barcelona-valles/es-lineas-y-horarios-barcelona-valles-s1-barcelona-placa-catalunya-terrassa/" target="_blank">FGC — Línea S1</a></td><td>Conexión Terrassa</td></tr>
+                    <tr><td><a href="https://www.tusgsal.cat/cat/servei-d-autobus/servei-diurn.html" target="_blank">TUSGSAL — Servicio diurno</a></td><td>Líneas de bus locales</td></tr>
+                    <tr><td><a href="https://moovitapp.com/index/es/transporte_p%C3%BAblico-Carrer_Del_Mol%C3%AD_De_La_Torre-Barcelona-street_10401634-362" target="_blank">Moovit — Molí de la Torre</a></td><td>Transporte cerca del trabajo</td></tr>
+                </tbody>
+            </table>
+
+            <h3>4. Aparcamiento</h3>
+            <table>
+                <thead><tr><th>Fuente</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="https://www.engestur.cat/es/services/aparcamientos-de-rotacion/" target="_blank">Engestur — Aparcamientos rotación</a></td><td>Parkings públicos</td></tr>
+                    <tr><td><a href="https://www.engestur.cat/services/aparcaments-residents/" target="_blank">Engestur — Aparcamientos residentes</a></td><td>Parkings para residentes</td></tr>
+                    <tr><td><a href="https://www.fotocasa.es/es/comprar/garajes/badalona/progres-pep-ventura/l" target="_blank">Fotocasa — Garajes Progrés–Pep Ventura</a></td><td>Oferta garajes en venta</td></tr>
+                    <tr><td><a href="https://www.idealista.com/alquiler-garajes/badalona-barcelona/" target="_blank">Idealista — Alquiler garajes</a></td><td>Precios garajes alquiler</td></tr>
+                </tbody>
+            </table>
+
+            <h3>5. Servicios sanitarios</h3>
+            <table>
+                <thead><tr><th>Fuente</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="https://www.badalona.cat/ca/serveis-ajuntament/sanitat-i-salut/recusos-sanitaris/recursos-sanitaris" target="_blank">Ajuntament — Recursos sanitarios</a></td><td>Listado de CAPs</td></tr>
+                    <tr><td><a href="https://primaria.icsmetropolitananord.cat/badalona" target="_blank">ICS Metropolitana Nord</a></td><td>CAPs por zona</td></tr>
+                    <tr><td><a href="https://hospitalgermanstrias.cat/es/area-geografica-atencion" target="_blank">Hospital Germans Trias</a></td><td>Área de atención</td></tr>
+                </tbody>
+            </table>
+
+            <h3>6. Precio de vivienda</h3>
+            <table>
+                <thead><tr><th>Fuente</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="https://www.idealista.com/sala-de-prensa/informes-precio-vivienda/venta/cataluna/barcelona-provincia/badalona/" target="_blank">Idealista — Informe precios Badalona</a></td><td>Precio medio por zonas</td></tr>
+                    <tr><td><a href="https://www.fotocasa.es/indice-precio-vivienda/badalona/todas-las-zonas" target="_blank">Fotocasa — Todas las zonas</a></td><td>Comparativa distritos</td></tr>
+                    <tr><td><a href="https://www.fotocasa.es/indice-precio-vivienda/badalona/centre-badalona" target="_blank">Fotocasa — Centre Badalona</a></td><td>Precio medio Centre</td></tr>
+                    <tr><td><a href="https://www.fotocasa.es/indice-precio-vivienda/badalona/progres-pep-ventura" target="_blank">Fotocasa — Progrés–Pep Ventura</a></td><td>Precio Progrés–Pep Ventura</td></tr>
+                </tbody>
+            </table>
+
+            <h3>7. Educación y comercio</h3>
+            <table>
+                <thead><tr><th>Fuente</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td><a href="https://serveiseducatius.xtec.cat/badalona/comunitat/centres-educatius/" target="_blank">XTEC — Centros educativos</a></td><td>Oferta educativa</td></tr>
+                    <tr><td><a href="https://www.badalona.cat/ca/serveis-ajuntament/activitat-economica/comerc-1/mercats-municipals-badalona" target="_blank">Ajuntament — Mercats municipals</a></td><td>Mercados por barrio</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <p>Dashboard generado el 26 de mayo de 2026 | Datos orientativos, no constituyen asesoramiento financiero ni inmobiliario</p>
+        </footer>
+    </div>
+
+    <script>
+        // ===== MAP =====
+        const map = L.map('map').setView([41.445, 2.225], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Work location
+        L.marker([41.4590, 2.2280], {
+            icon: L.divIcon({ className: 'custom-icon', html: '<div style="background:#dc2626;color:white;padding:4px 8px;border-radius:50%;font-weight:bold;font-size:14px;text-align:center;width:30px;height:30px;line-height:22px;">💼</div>', iconSize: [30, 30] })
+        }).addTo(map).bindPopup('<strong>Trabajo</strong><br>C/ Molí de la Torre, 8');
+
+        // Family location
+        L.marker([41.3875, 2.1503], {
+            icon: L.divIcon({ className: 'custom-icon', html: '<div style="background:#7c3aed;color:white;padding:4px 8px;border-radius:50%;font-weight:bold;font-size:14px;text-align:center;width:30px;height:30px;line-height:22px;">👨‍👩‍👧</div>', iconSize: [30, 30] })
+        }).addTo(map).bindPopup('<strong>Familia</strong><br>C/ Entença, 163, Barcelona');
+
+        // Partner location
+        L.marker([41.5633, 2.0080], {
+            icon: L.divIcon({ className: 'custom-icon', html: '<div style="background:#ea580c;color:white;padding:4px 8px;border-radius:50%;font-weight:bold;font-size:14px;text-align:center;width:30px;height:30px;line-height:22px;">❤️</div>', iconSize: [30, 30] })
+        }).addTo(map).bindPopup('<strong>Pareja</strong><br>Av. Abat Marcet, 35, Terrassa');
+
+        // Zone 1: Coll i Pujol / Pompeu Fabra
+        const zone1 = L.polygon([
+            [41.4500, 2.2150], [41.4530, 2.2200], [41.4560, 2.2250],
+            [41.4540, 2.2300], [41.4500, 2.2280], [41.4480, 2.2220]
+        ], { color: '#2563eb', fillOpacity: 0.2, weight: 3 }).addTo(map).bindPopup('<strong>Zona 1: Coll i Pujol / Pompeu Fabra / Centre</strong><br>Mejor encaje logístico');
+
+        // Zone 2: Progrés – Pep Ventura
+        const zone2 = L.polygon([
+            [41.4430, 2.2260], [41.4460, 2.2310], [41.4480, 2.2380],
+            [41.4460, 2.2420], [41.4430, 2.2400], [41.4410, 2.2330]
+        ], { color: '#16a34a', fillOpacity: 0.2, weight: 3 }).addTo(map).bindPopup('<strong>Zona 2: Progrés – Pep Ventura</strong><br>Mejor compra racional');
+
+        // Metro L2 stations
+        const metroStations = [
+            { name: 'Pompeu Fabra', lat: 41.4505, lng: 2.2195 },
+            { name: 'Pep Ventura', lat: 41.4440, lng: 2.2310 },
+            { name: 'Gorg', lat: 41.4385, lng: 2.2365 }
+        ];
+
+        metroStations.forEach(st => {
+            L.circleMarker([st.lat, st.lng], {
+                radius: 8, color: '#0891b2', fillColor: '#0891b2', fillOpacity: 0.8, weight: 2
+            }).addTo(map).bindPopup(`<strong>Metro L2</strong><br>${st.name}`);
+        });
+
+        // L2 line
+        L.polyline(metroStations.map(s => [s.lat, s.lng]), {
+            color: '#0891b2', weight: 4, opacity: 0.7, dashArray: '10, 5'
+        }).addTo(map);
+
+        // ===== RADAR CHART =====
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+        new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Acceso trabajo', 'Acceso Barcelona', 'Acceso Terrassa', 'Transporte público', 'Servicios', 'Precio (asequible)', 'Aparcamiento', 'Seguridad percibida', 'IST Socioeconómico'],
+                datasets: [{
+                    label: 'Coll i Pujol / Pompeu Fabra / Centre',
+                    data: [95, 90, 75, 95, 95, 55, 30, 90, 95],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#2563eb'
+                }, {
+                    label: 'Progrés – Pep Ventura',
+                    data: [70, 85, 70, 85, 80, 75, 40, 80, 75],
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#16a34a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                },
+                plugins: {
+                    title: { display: true, text: 'Comparativa multidimensional (0-100)', font: { size: 14 } }
+                }
+            }
+        });
+
+        // ===== ACCESS CHART =====
+        const accessCtx = document.getElementById('accessChart').getContext('2d');
+        new Chart(accessCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Coll i Pujol / Pompeu Fabra norte', 'Centre cerca Pompeu Fabra', 'Dalt la Vila bajo / Martí Pujol', 'Progrés alto', 'Pep Ventura / Progrés bajo', 'Gorg'],
+                datasets: [{
+                    label: 'Trabajo (Molí de la Torre)',
+                    data: [95, 85, 85, 70, 60, 60],
+                    backgroundColor: '#dc2626'
+                }, {
+                    label: 'Familia (Entença, Barcelona)',
+                    data: [85, 95, 85, 85, 85, 75],
+                    backgroundColor: '#7c3aed'
+                }, {
+                    label: 'Pareja (Terrassa)',
+                    data: [70, 70, 70, 70, 65, 60],
+                    backgroundColor: '#ea580c'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Calidad de acceso (0-100)' } },
+                    x: { ticks: { maxRotation: 45, minRotation: 20 } }
+                },
+                plugins: {
+                    title: { display: true, text: 'Calidad de acceso a ubicaciones de referencia por zona', font: { size: 14 } }
+                }
+            }
+        });
+
+        // ===== PRICE CHART =====
+        const priceCtx = document.getElementById('priceChart').getContext('2d');
+        new Chart(priceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['2 hab. + balcón', '3 hab. + balcón', '3 hab. premium'],
+                datasets: [{
+                    label: 'Progrés–Pep Ventura (€/m²)',
+                    data: [4150, 4000, 4500],
+                    backgroundColor: 'rgba(22, 163, 74, 0.7)',
+                    borderColor: '#16a34a',
+                    borderWidth: 1
+                }, {
+                    label: 'Coll i Pujol / Centre (€/m²)',
+                    data: [4750, 4250, 4700],
+                    backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                    borderColor: '#2563eb',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: false, min: 3000, title: { display: true, text: '€/m²' } }
+                },
+                plugins: {
+                    title: { display: true, text: 'Rango medio de €/m² por tipología y zona', font: { size: 14 } }
+                }
+            }
+        });
+
+        // ===== PRICE BAR CHART =====
+        const priceBarCtx = document.getElementById('priceBarChart').getContext('2d');
+        new Chart(priceBarCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Progrés 2h', 'Progrés 3h', 'Pompeu Fabra 2h', 'Pompeu Fabra 3h'],
+                datasets: [{
+                    label: 'Precio mínimo (€)',
+                    data: [240000, 320000, 270000, 340000],
+                    backgroundColor: 'rgba(34, 197, 94, 0.5)',
+                    borderColor: '#16a34a',
+                    borderWidth: 1
+                }, {
+                    label: 'Precio medio (€)',
+                    data: [285000, 360000, 305000, 380000],
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: '#2563eb',
+                    borderWidth: 1
+                }, {
+                    label: 'Precio máximo (€)',
+                    data: [300000, 390000, 340000, 430000],
+                    backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                    borderColor: '#dc2626',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: false, min: 200000, title: { display: true, text: 'Precio (€)' } }
+                },
+                plugins: {
+                    title: { display: true, text: 'Rango de precios totales por zona y tipología', font: { size: 14 } }
+                }
+            }
+        });
+
+        // ===== MORTGAGE CHART =====
+        const mortgageCtx = document.getElementById('mortgageChart').getContext('2d');
+        new Chart(mortgageCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Progrés 2h\n285.000€', 'Progrés 3h\n360.000€', 'Pompeu Fabra 2h\n305.000€', 'Pompeu Fabra 3h\n380.000€'],
+                datasets: [{
+                    label: 'Ahorro inicial necesario (€)',
+                    data: [71250, 90000, 76250, 95000],
+                    backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                    borderColor: '#f59e0b',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Cuota mensual (€)',
+                    data: [895, 1130, 958, 1193],
+                    backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                    borderColor: '#2563eb',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { type: 'linear', position: 'left', title: { display: true, text: 'Ahorro inicial (€)' }, beginAtZero: true },
+                    y1: { type: 'linear', position: 'right', title: { display: true, text: 'Cuota mensual (€)' }, beginAtZero: true, grid: { drawOnChartArea: false } }
+                },
+                plugins: {
+                    title: { display: true, text: 'Esfuerzo financiero: ahorro inicial vs cuota mensual', font: { size: 14 } }
+                }
+            }
+        });
+
+        // ===== EFFORT CHART =====
+        const effortCtx = document.getElementById('effortChart').getContext('2d');
+        new Chart(effortCtx, {
+            type: 'line',
+            data: {
+                labels: ['250.000€', '285.000€', '305.000€', '360.000€', '380.000€', '400.000€'],
+                datasets: [{
+                    label: 'Ahorro total necesario (25%)',
+                    data: [62500, 71250, 76250, 90000, 95000, 100000],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#f59e0b'
+                }, {
+                    label: 'Hipoteca (80%)',
+                    data: [200000, 228000, 244000, 288000, 304000, 320000],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#2563eb'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: '€' } }
+                },
+                plugins: {
+                    title: { display: true, text: 'Esfuerzo inicial y capital hipotecario según precio de compra', font: { size: 14 } }
+                }
+            }
+        });
+
+        // ===== IST CHART =====
+        const istCtx = document.getElementById('istChart').getContext('2d');
+        new Chart(istCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Centre\n(candidata)', 'Progrés–Pep Ventura\n(candidata)', 'Media Catalunya', 'Badalona municipal', 'Sant Roc Oest\n(a evitar)'],
+                datasets: [{
+                    label: 'IST (base 100 = Catalunya)',
+                    data: [122.1, 100, 100, 94.1, 51.5],
+                    backgroundColor: ['#2563eb', '#16a34a', '#64748b', '#94a3b8', '#dc2626'],
+                    borderColor: ['#1d4ed8', '#15803d', '#475569', '#64748b', '#b91c1c'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: { beginAtZero: true, max: 140, title: { display: true, text: 'IST (base 100)' } }
+                },
+                plugins: {
+                    title: { display: true, text: 'Índice Socioeconómico Territorial — Comparativa', font: { size: 14 } },
+                    annotation: {
+                        annotations: {
+                            line1: { type: 'line', xMin: 100, xMax: 100, borderColor: '#64748b', borderWidth: 2, borderDash: [5, 5] }
+                        }
+                    }
+                }
+            }
+        });
+
+        // ===== TAB SWITCHING =====
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
