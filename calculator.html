@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculadora Hipotecaria</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: #f8fafc;
+        color: #1e293b;
+        min-height: 100vh;
+        padding: 30px 20px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 2rem;
+        color: #1e293b;
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+      }
+
+      /* ── Mode Tabs ── */
+      .mode-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        max-width: 500px;
+        margin: 0 auto 30px;
+        background: #e2e8f0;
+        border-radius: 12px;
+        padding: 5px;
+      }
+
+      .mode-tab {
+        flex: 1;
+        padding: 11px 20px;
+        border: none;
+        background: transparent;
+        border-radius: 9px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #718096;
+        cursor: pointer;
+        transition: all 0.22s;
+        letter-spacing: 0.2px;
+      }
+
+      .mode-tab.active {
+        background: white;
+        color: #2563eb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .mode-tab:hover:not(.active) {
+        color: #2563eb;
+      }
+
+      /* ── Panels ── */
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: contents;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      @media (max-width: 700px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: white;
+        border-radius: 16px;
+        padding: 28px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+
+      .card h2 {
+        font-size: 1.1rem;
+        color: #2563eb;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #dbeafe;
+        padding-bottom: 10px;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 6px;
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #cbd5e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: #2d3748;
+        background: #f7fafc;
+        transition: border-color 0.2s;
+        outline: none;
+      }
+
+      input[type="number"]:focus {
+        border-color: #2563eb;
+        background: white;
+      }
+
+      .radio-group {
+        display: flex;
+        gap: 16px;
+        margin-top: 4px;
+      }
+
+      .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.95rem;
+      }
+
+      .radio-group input[type="radio"] {
+        accent-color: #2563eb;
+        width: 16px;
+        height: 16px;
+      }
+
+      .hint {
+        font-size: 0.78rem;
+        color: #a0aec0;
+        margin-top: 4px;
+      }
+
+      /* ── Buttons ── */
+      .calc-btn {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+        transition:
+          opacity 0.2s,
+          transform 0.1s;
+      }
+
+      .calc-btn:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      }
+      .calc-btn:active {
+        transform: translateY(0);
+      }
+
+      /* ── Results card (forward) ── */
+      .results-card {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+        grid-column: 1 / -1;
+      }
+
+      .results-card h2 {
+        font-size: 1.1rem;
+        color: white;
+        margin-bottom: 20px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 10px;
+      }
+
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+      }
+
+      .result-item {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        backdrop-filter: blur(4px);
+      }
+
+      .result-item .label {
+        font-size: 0.78rem;
+        opacity: 0.85;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .result-item .value {
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .result-item .value.big {
+        font-size: 1.7rem;
+        color: #fff176;
+      }
+
+      .breakdown {
+        margin-top: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 16px 20px;
+      }
+
+      .breakdown h3 {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .breakdown-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .breakdown-row:last-child {
+        border-bottom: none;
+      }
+      .breakdown-row .bval {
+        font-weight: 600;
+      }
+
+      /* ── Affordability Banner ── */
+      .afford-banner {
+        grid-column: 1 / -1;
+        border-radius: 14px;
+        padding: 20px 24px;
+        display: none;
+        align-items: flex-start;
+        gap: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      }
+
+      .afford-banner.ok {
+        background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+        border-left: 6px solid #38a169;
+        color: #22543d;
+      }
+      .afford-banner.warning {
+        background: linear-gradient(135deg, #fefcbf, #faf089);
+        border-left: 6px solid #d69e2e;
+        color: #744210;
+      }
+      .afford-banner.danger {
+        background: linear-gradient(135deg, #fed7d7, #feb2b2);
+        border-left: 6px solid #e53e3e;
+        color: #742a2a;
+      }
+
+      .afford-banner .banner-icon {
+        font-size: 2rem;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .afford-banner .banner-content .banner-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .afford-banner .banner-content .banner-desc {
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+
+      .afford-banner .banner-content .banner-stats {
+        display: flex;
+        gap: 24px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .afford-banner .banner-content .banner-stats .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .afford-banner .banner-content .banner-stats .stat .slabel {
+        font-size: 0.75rem;
+        opacity: 0.75;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .afford-banner .banner-content .banner-stats .stat .sval {
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .ratio-bar-wrap {
+        margin-top: 14px;
+      }
+
+      .ratio-bar-wrap .bar-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        opacity: 0.75;
+        margin-bottom: 4px;
+      }
+
+      .ratio-bar-bg {
+        width: 100%;
+        height: 12px;
+        background: rgba(0, 0, 0, 0.12);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+
+      .ratio-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.5s ease;
+      }
+      .ratio-bar-fill.ok {
+        background: #38a169;
+      }
+      .ratio-bar-fill.warning {
+        background: #d69e2e;
+      }
+      .ratio-bar-fill.danger {
+        background: #e53e3e;
+      }
+
+      .ratio-bar-markers {
+        position: relative;
+        height: 6px;
+        margin-top: 2px;
+      }
+
+      .marker {
+        position: absolute;
+        top: 0;
+        width: 2px;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 1px;
+      }
+      .marker-label {
+        position: absolute;
+        font-size: 0.7rem;
+        opacity: 0.6;
+        transform: translateX(-50%);
+        top: 7px;
+      }
+
+      /* ── Inverse Results Card ── */
+      .inverse-results-card {
+        grid-column: 1 / -1;
+        border-radius: 16px;
+        padding: 28px;
+        display: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        background: white;
+      }
+
+      .inverse-results-card h2 {
+        font-size: 1.1rem;
+        color: #2563eb;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #dbeafe;
+        padding-bottom: 10px;
+      }
+
+      /* scenario grid */
+      .scenario-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+      }
+
+      .scenario-card {
+        border-radius: 14px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .scenario-card.conservative {
+        background: linear-gradient(135deg, #ebf8ff, #bee3f8);
+        border: 2px solid #90cdf4;
+        color: #1a365d;
+      }
+
+      .scenario-card.recommended {
+        background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+        border: 2px solid #68d391;
+        color: #1c4532;
+      }
+
+      .scenario-card.maximum {
+        background: linear-gradient(135deg, #fefcbf, #faf089);
+        border: 2px solid #f6e05e;
+        color: #744210;
+      }
+
+      .scenario-card .sc-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.7;
+        margin-bottom: 8px;
+      }
+
+      .scenario-card .sc-price {
+        font-size: 1.9rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+      }
+
+      .scenario-card .sc-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.83rem;
+        padding: 3px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+      }
+
+      .scenario-card .sc-row:last-child {
+        border-bottom: none;
+      }
+      .scenario-card .sc-row .sc-val {
+        font-weight: 600;
+      }
+
+      .scenario-card .sc-ribbon {
+        position: absolute;
+        top: 14px;
+        right: -22px;
+        background: #38a169;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 3px 28px;
+        transform: rotate(35deg);
+        letter-spacing: 0.5px;
+      }
+
+      /* inverse assumptions table */
+      .assumptions-box {
+        background: #f7fafc;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-top: 4px;
+      }
+
+      .assumptions-box h3 {
+        font-size: 0.85rem;
+        color: #4a5568;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .assumptions-box .arow {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        padding: 4px 0;
+        border-bottom: 1px solid #e2e8f0;
+        color: #4a5568;
+      }
+
+      .assumptions-box .arow:last-child {
+        border-bottom: none;
+      }
+      .assumptions-box .arow .aval {
+        font-weight: 600;
+        color: #2d3748;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🏠 Calculadora Hipotecaria</h1>
+    <p style="text-align:center;color:#64748b;margin-bottom:24px;font-size:0.95rem;">Simula tu hipoteca o descubre el precio máximo que puedes permitirte</p>
+
+    <!-- Mode selector -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('forward')">
+        📐 Tengo un piso en mente
+      </button>
+      <button class="mode-tab" onclick="switchMode('inverse')">
+        💡 ¿Cuánto puedo pagar?
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!--  FORWARD MODE                                             -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="container" id="forwardPanel">
+      <!-- Property Details -->
+      <div class="card">
+        <h2>🏡 Datos del Inmueble</h2>
+
+        <div class="form-group">
+          <label for="propertyPrice">Precio del inmueble (€)</label>
+          <input
+            type="number"
+            id="propertyPrice"
+            placeholder="p.ej. 250000"
+            min="0"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Impuesto de Transmisiones (ITP / IVA)</label>
+          <div class="radio-group">
+            <label><input type="radio" name="tax" value="5" /> 5%</label>
+            <label
+              ><input type="radio" name="tax" value="10" checked /> 10%</label
+            >
+          </div>
+          <p class="hint">Se calcula sobre el precio del inmueble</p>
+        </div>
+
+        <div class="form-group">
+          <label for="financedPct">Porcentaje financiado (%)</label>
+          <input type="number" id="financedPct" value="80" min="1" max="100" />
+          <p class="hint">
+            Normalmente los bancos financian hasta el 80% del valor de tasación
+          </p>
+        </div>
+      </div>
+
+      <!-- Loan Conditions -->
+      <div class="card">
+        <h2>💰 Condiciones del Préstamo</h2>
+
+        <div class="form-group">
+          <label for="tin">Tipo de interés anual – TIN (%)</label>
+          <input type="number" id="tin" value="3.5" step="0.01" min="0" />
+        </div>
+
+        <div class="form-group">
+          <label for="years">Plazo (años)</label>
+          <input type="number" id="years" value="25" min="1" max="40" />
+        </div>
+
+        <div class="form-group">
+          <label for="otherDebts">Otras deudas mensuales (€)</label>
+          <input type="number" id="otherDebts" value="0" min="0" />
+          <p class="hint">Préstamo coche, tarjetas, préstamos personales…</p>
+        </div>
+      </div>
+
+      <!-- Income & Affordability -->
+      <div class="card">
+        <h2>👤 Ingresos y Capacidad</h2>
+
+        <div class="form-group">
+          <label for="netIncome">Ingresos netos mensuales (€)</label>
+          <input type="number" id="netIncome" placeholder="p.ej. 3000" min="0" />
+          <p class="hint">Tu salario neto mensual total</p>
+        </div>
+
+        <div class="form-group">
+          <label for="maxDebtPct">Ratio máximo de endeudamiento (%)</label>
+          <input
+            type="number"
+            id="maxDebtPct"
+            value="35"
+            min="1"
+            max="100"
+            step="1"
+          />
+          <p class="hint">Los bancos suelen permitir entre el 30–35% de los ingresos netos</p>
+        </div>
+
+        <div class="form-group">
+          <label for="fwd_savings">Ahorros disponibles (€)</label>
+          <input
+            type="number"
+            id="fwd_savings"
+            placeholder="p.ej. 50000"
+            min="0"
+          />
+          <p class="hint">Para cubrir entrada + impuestos + gastos</p>
+        </div>
+      </div>
+
+      <!-- Additional Costs -->
+      <div class="card">
+        <h2>📋 Gastos Adicionales</h2>
+
+        <div class="form-group">
+          <label for="notaryCost">Notaría (€)</label>
+          <input type="number" id="notaryCost" value="1200" min="0" />
+          <p class="hint">Normalmente entre 800 € y 2.000 €</p>
+        </div>
+
+        <div class="form-group">
+          <label for="registryCost">Registro de la Propiedad (€)</label>
+          <input type="number" id="registryCost" value="600" min="0" />
+          <p class="hint">Normalmente entre 400 € y 1.000 €</p>
+        </div>
+
+        <div class="form-group">
+          <label for="otherCosts">Otros gastos (€)</label>
+          <input type="number" id="otherCosts" value="0" min="0" />
+          <p class="hint">Agencia, tasación, gestoría…</p>
+        </div>
+      </div>
+
+      <!-- Appraisal + Button -->
+      <div class="card" style="grid-column: 1 / -1">
+        <h2>📊 Valor de Tasación (Opcional)</h2>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: end;
+          "
+        >
+          <div class="form-group" style="margin-bottom: 0">
+            <label for="appraisalValue">Valor de tasación (€)</label>
+            <input
+              type="number"
+              id="appraisalValue"
+              placeholder="Dejar vacío = precio del inmueble"
+              min="0"
+            />
+            <p class="hint">Si se deja vacío, se usará el precio del inmueble</p>
+          </div>
+          <div>
+            <button class="calc-btn" onclick="calcForward()">
+              📐 Calcular Hipoteca
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Affordability Banner -->
+      <div class="afford-banner" id="affordBanner">
+        <div class="banner-icon" id="bannerIcon"></div>
+        <div class="banner-content">
+          <div class="banner-title" id="bannerTitle"></div>
+          <div class="banner-desc" id="bannerDesc"></div>
+          <div class="banner-stats" id="bannerStats"></div>
+          <div class="ratio-bar-wrap" id="ratioBarWrap"></div>
+        </div>
+      </div>
+
+      <!-- Forward Results -->
+      <div class="results-card" id="resultsCard" style="display: none">
+        <h2>📈 Resultados</h2>
+        <div class="results-grid">
+          <div class="result-item">
+            <div class="label">Cuota Mensual</div>
+            <div class="value big" id="monthlyPayment">–</div>
+          </div>
+          <div class="result-item">
+            <div class="label">Ahorros Necesarios</div>
+            <div class="value big" id="savingsNeeded" style="color:#fff176">–</div>
+          </div>
+          <div class="result-item">
+            <div class="label">Importe del Préstamo</div>
+            <div class="value" id="loanAmount">–</div>
+          </div>
+          <div class="result-item">
+            <div class="label">Total Intereses</div>
+            <div class="value" id="totalInterest">–</div>
+          </div>
+          <div class="result-item">
+            <div class="label">Total Devuelto</div>
+            <div class="value" id="totalRepaid">–</div>
+          </div>
+          <div class="result-item" id="savings35Row" style="display:none">
+            <div class="label">Ahorros para ratio ≤35%</div>
+            <div class="value" id="savings35" style="color:#fbbf24">–</div>
+          </div>
+        </div>
+
+        <div class="breakdown">
+          <h3>💳 Desglose de Costes</h3>
+          <div class="breakdown-row">
+            <span>Precio del inmueble</span><span class="bval" id="bPrice">–</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Impuestos (ITP/IVA)</span><span class="bval" id="bTax">–</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Notaría</span><span class="bval" id="bNotary">–</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Registro</span><span class="bval" id="bRegistry">–</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Otros gastos</span><span class="bval" id="bOther">–</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Entrada (fondos propios)</span
+            ><span class="bval" id="bDown">–</span>
+          </div>
+          <div class="breakdown-row" style="font-size: 1rem; padding-top: 8px">
+            <span><strong>Total dinero necesario</strong></span>
+            <span class="bval" id="bTotal" style="color: #fff176">–</span>
+          </div>
+          <div class="breakdown-row" id="bSavingsRow" style="display:none; padding-top: 4px">
+            <span>Tus ahorros</span><span class="bval" id="bSavings">–</span>
+          </div>
+          <div class="breakdown-row" id="bGapRow" style="display:none; font-size: 1rem; padding-top: 4px">
+            <span><strong id="bGapLabel">Diferencia</strong></span>
+            <span class="bval" id="bGap" style="font-weight:700">–</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /forwardPanel -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!--  INVERSE MODE                                             -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="container" id="inversePanel" style="display: none">
+      <!-- Income -->
+      <div class="card">
+        <h2>👤 Tus Ingresos</h2>
+
+        <div class="form-group">
+          <label for="inv_netIncome">Ingresos netos mensuales (€)</label>
+          <input
+            type="number"
+            id="inv_netIncome"
+            placeholder="p.ej. 3000"
+            min="0"
+          />
+          <p class="hint">Tu salario neto mensual total</p>
+        </div>
+
+        <div class="form-group">
+          <label for="inv_otherDebts">Otras deudas mensuales (€)</label>
+          <input type="number" id="inv_otherDebts" value="0" min="0" />
+          <p class="hint">Préstamo coche, tarjetas, préstamos personales…</p>
+        </div>
+      </div>
+
+      <!-- Loan params -->
+      <div class="card">
+        <h2>💰 Parámetros del Préstamo</h2>
+
+        <div class="form-group">
+          <label for="inv_tin">Tipo de interés anual – TIN (%)</label>
+          <input type="number" id="inv_tin" value="3.5" step="0.01" min="0" />
+        </div>
+
+        <div class="form-group">
+          <label for="inv_years">Plazo (años)</label>
+          <input type="number" id="inv_years" value="25" min="1" max="40" />
+        </div>
+
+        <div class="form-group">
+          <label for="inv_financedPct">Porcentaje financiado (%)</label>
+          <input
+            type="number"
+            id="inv_financedPct"
+            value="80"
+            min="1"
+            max="100"
+          />
+          <p class="hint">Normalmente los bancos financian hasta el 80%</p>
+        </div>
+      </div>
+
+      <!-- Purchase costs -->
+      <div class="card">
+        <h2>📋 Gastos de Compra</h2>
+
+        <div class="form-group">
+          <label>Impuesto de Transmisiones (ITP / IVA)</label>
+          <div class="radio-group">
+            <label><input type="radio" name="inv_tax" value="5" /> 5%</label>
+            <label
+              ><input type="radio" name="inv_tax" value="10" checked />
+              10%</label
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inv_notary">Notaría (€)</label>
+          <input type="number" id="inv_notary" value="1200" min="0" />
+        </div>
+
+        <div class="form-group">
+          <label for="inv_registry">Registro de la Propiedad (€)</label>
+          <input type="number" id="inv_registry" value="600" min="0" />
+        </div>
+
+        <div class="form-group">
+          <label for="inv_otherCosts">Otros gastos (€)</label>
+          <input type="number" id="inv_otherCosts" value="0" min="0" />
+          <p class="hint">Agencia, tasación, gestoría…</p>
+        </div>
+      </div>
+
+      <!-- Savings -->
+      <div class="card">
+        <h2>🏦 Tus Ahorros</h2>
+
+        <div class="form-group">
+          <label for="inv_savings">Ahorros disponibles (€)</label>
+          <input
+            type="number"
+            id="inv_savings"
+            placeholder="p.ej. 50000"
+            min="0"
+          />
+          <p class="hint">Para cubrir entrada + gastos de compra</p>
+        </div>
+
+        <div style="margin-top: 30px">
+          <button class="calc-btn" onclick="calcInverse()">
+            💡 Calcular Precio Máximo
+          </button>
+        </div>
+      </div>
+
+      <!-- Inverse Results -->
+      <div class="inverse-results-card" id="inverseResults">
+        <h2>💡 Precio Máximo que Puedes Permitirte</h2>
+
+        <div class="scenario-grid" id="scenarioGrid"></div>
+
+        <div class="assumptions-box" id="assumptionsBox"></div>
+      </div>
+    </div>
+    <!-- /inversePanel -->
+
+    <script>
+      /* ═══════════════════════════════════════════════════════════
+       *  CONSTANTS & CONFIGURATION
+       * ═══════════════════════════════════════════════════════════ */
+      const DEBT_RATIO_COMFORTABLE = 30;
+      const DEBT_RATIO_ACCEPTABLE = 35;
+      const DEBT_RATIO_HIGH = 45;
+
+      const SCENARIO_CONSERVATIVE_RATIO = 0.30;
+      const SCENARIO_RECOMMENDED_RATIO = 0.35;
+      const SCENARIO_MAXIMUM_RATIO = 0.40;
+
+      const MONTHS_PER_YEAR = 12;
+
+      /* ═══════════════════════════════════════════════════════════
+       *  FORMATTING UTILITIES
+       * ═══════════════════════════════════════════════════════════ */
+      function formatCurrency(amount, decimals = 0) {
+        return amount.toLocaleString("es-ES", {
+          style: "currency",
+          currency: "EUR",
+          maximumFractionDigits: decimals,
+        });
+      }
+
+      function formatCurrencyExact(amount) {
+        return formatCurrency(amount, 2);
+      }
+
+      function formatPercent(value) {
+        return value.toFixed(1) + "%";
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+       *  DOM HELPERS
+       * ═══════════════════════════════════════════════════════════ */
+      function getNumericValue(id, fallback = 0) {
+        return parseFloat(document.getElementById(id).value) || fallback;
+      }
+
+      function getCheckedRadioValue(name) {
+        return parseFloat(document.querySelector(`input[name="${name}"]:checked`).value);
+      }
+
+      function setText(id, text) {
+        document.getElementById(id).textContent = text;
+      }
+
+      function setDisplay(id, visible) {
+        document.getElementById(id).style.display = visible ? "" : "none";
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+       *  FINANCIAL CALCULATIONS
+       * ═══════════════════════════════════════════════════════════ */
+
+      /**
+       * Calculate the monthly payment for a loan using the French amortization formula.
+       * @param {number} principal - Loan amount
+       * @param {number} annualRate - Annual interest rate (decimal, e.g. 0.035)
+       * @param {number} totalMonths - Total number of monthly payments
+       * @returns {number} Monthly payment amount
+       */
+      function calculateMonthlyPayment(principal, annualRate, totalMonths) {
+        const monthlyRate = annualRate / MONTHS_PER_YEAR;
+        if (monthlyRate === 0) return principal / totalMonths;
+
+        const compoundFactor = Math.pow(1 + monthlyRate, totalMonths);
+        return (principal * monthlyRate * compoundFactor) / (compoundFactor - 1);
+      }
+
+      /**
+       * Calculate the maximum loan principal for a given monthly payment capacity.
+       * (Inverse of calculateMonthlyPayment)
+       * @param {number} maxMonthlyPayment - Maximum affordable monthly payment
+       * @param {number} annualRate - Annual interest rate (decimal)
+       * @param {number} totalMonths - Total number of monthly payments
+       * @returns {number} Maximum loan principal
+       */
+      function calculateMaxLoan(maxMonthlyPayment, annualRate, totalMonths) {
+        const monthlyRate = annualRate / MONTHS_PER_YEAR;
+        if (monthlyRate === 0) return maxMonthlyPayment * totalMonths;
+
+        const compoundFactor = Math.pow(1 + monthlyRate, totalMonths);
+        return (maxMonthlyPayment * (compoundFactor - 1)) / (monthlyRate * compoundFactor);
+      }
+
+      /**
+       * Calculate the debt-to-income ratio as a percentage.
+       */
+      function calculateDebtRatio(totalMonthlyDebt, netIncome) {
+        if (netIncome <= 0) return null;
+        return (totalMonthlyDebt / netIncome) * 100;
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+       *  MODE SWITCHING
+       * ═══════════════════════════════════════════════════════════ */
+      function switchMode(mode) {
+        document.querySelectorAll(".mode-tab").forEach((tab, index) => {
+          const isActive =
+            (mode === "forward" && index === 0) ||
+            (mode === "inverse" && index === 1);
+          tab.classList.toggle("active", isActive);
+        });
+
+        document.getElementById("forwardPanel").style.display =
+          mode === "forward" ? "grid" : "none";
+        document.getElementById("inversePanel").style.display =
+          mode === "inverse" ? "grid" : "none";
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+       *  FORWARD CALCULATION
+       *  "I have a property in mind — what will it cost me?"
+       * ═══════════════════════════════════════════════════════════ */
+
+      /** Read all forward-mode form inputs into a structured object. */
+      function readForwardInputs() {
+        const appraisalRaw = document.getElementById("appraisalValue").value;
+        const price = getNumericValue("propertyPrice");
+
+        return {
+          price,
+          taxRate: getCheckedRadioValue("tax") / 100,
+          financedPct: getNumericValue("financedPct") / 100,
+          annualRate: getNumericValue("tin") / 100,
+          years: parseInt(document.getElementById("years").value),
+          notary: getNumericValue("notaryCost"),
+          registry: getNumericValue("registryCost"),
+          otherCosts: getNumericValue("otherCosts"),
+          otherDebts: getNumericValue("otherDebts"),
+          netIncome: getNumericValue("netIncome"),
+          maxDebtPct: getNumericValue("maxDebtPct") || 35,
+          appraisal: appraisalRaw ? parseFloat(appraisalRaw) : price,
+          savings: getNumericValue("fwd_savings"),
+        };
+      }
+
+      /** Core forward calculation logic (pure, no DOM). */
+      function computeForwardMortgage(inputs) {
+        const { price, taxRate, financedPct, annualRate, years,
+                notary, registry, otherCosts, otherDebts,
+                netIncome, maxDebtPct, appraisal, savings } = inputs;
+
+        const tax = price * taxRate;
+        const fixedCosts = tax + notary + registry + otherCosts;
+        const baseDownPayment = price - appraisal * financedPct;
+
+        // If savings exceed base costs, the surplus increases the down payment
+        const actualDownPayment = savings > 0
+          ? Math.max(baseDownPayment, savings - fixedCosts)
+          : baseDownPayment;
+        const cappedDownPayment = Math.min(actualDownPayment, price);
+        const loanAmount = price - cappedDownPayment;
+        const totalCashNeeded = cappedDownPayment + fixedCosts;
+
+        const totalMonths = years * MONTHS_PER_YEAR;
+        const monthlyPayment = calculateMonthlyPayment(loanAmount, annualRate, totalMonths);
+        const totalRepaid = monthlyPayment * totalMonths;
+        const totalInterest = totalRepaid - loanAmount;
+
+        const totalMonthlyDebt = monthlyPayment + otherDebts;
+        const maxAllowedDebt = netIncome > 0 ? (netIncome * maxDebtPct) / 100 : null;
+        const debtRatio = calculateDebtRatio(totalMonthlyDebt, netIncome);
+
+        return {
+          tax, fixedCosts, cappedDownPayment, loanAmount, totalCashNeeded,
+          totalMonths, monthlyPayment, totalRepaid, totalInterest,
+          totalMonthlyDebt, maxAllowedDebt, debtRatio,
+        };
+      }
+
+      /** Determine the affordability status based on debt ratio. */
+      function getAffordabilityStatus(debtRatio) {
+        if (debtRatio <= DEBT_RATIO_COMFORTABLE) {
+          return {
+            level: "ok",
+            icon: "✅",
+            title: "¡Bien! Tu nivel de endeudamiento está en un rango cómodo.",
+            description: `Tu deuda mensual total representa el ${formatPercent(debtRatio)} de tus ingresos netos, por debajo del umbral del 30–35%.`,
+          };
+        } else if (debtRatio <= DEBT_RATIO_ACCEPTABLE) {
+          return {
+            level: "warning",
+            icon: "⚠️",
+            title: "Aceptable, pero cerca del límite.",
+            description: `Tu deuda mensual total representa el ${formatPercent(debtRatio)} de tus ingresos netos. Dentro del límite pero con poco margen.`,
+          };
+        } else if (debtRatio <= DEBT_RATIO_HIGH) {
+          return {
+            level: "warning",
+            icon: "🚨",
+            title: "Atención: El ratio de endeudamiento supera los límites recomendados.",
+            description: `Tu deuda mensual total representa el ${formatPercent(debtRatio)} de tus ingresos netos, por encima del 35%. Los bancos podrían rechazarlo.`,
+          };
+        } else {
+          return {
+            level: "danger",
+            icon: "❌",
+            title: "Riesgo alto: Ratio de endeudamiento crítico.",
+            description: `Tu deuda mensual total representa el ${formatPercent(debtRatio)} de tus ingresos netos. Muy difícil que se apruebe.`,
+          };
+        }
+      }
+
+      /** Render the affordability banner in the DOM. */
+      function renderAffordabilityBanner(params) {
+        const { debtRatio, netIncome, monthlyPayment, otherDebts,
+                totalMonthlyDebt, maxAllowedDebt, maxDebtPct } = params;
+
+        const banner = document.getElementById("affordBanner");
+
+        if (netIncome <= 0 || debtRatio === null) {
+          banner.style.display = "none";
+          return;
+        }
+
+        banner.style.display = "flex";
+        const status = getAffordabilityStatus(debtRatio);
+        banner.className = `afford-banner ${status.level}`;
+
+        setText("bannerIcon", status.icon);
+        setText("bannerTitle", status.title);
+        setText("bannerDesc", status.description);
+
+        // Stats
+        const surplus = maxAllowedDebt !== null ? maxAllowedDebt - totalMonthlyDebt : null;
+        const surplusStr = surplus !== null
+          ? (surplus >= 0 ? `+${formatCurrencyExact(surplus)}` : formatCurrencyExact(surplus))
+          : "—";
+        const surplusColor = surplus !== null && surplus >= 0 ? "#276749" : "#c53030";
+
+        document.getElementById("bannerStats").innerHTML = `
+          <div class="stat"><span class="slabel">Ingresos netos</span><span class="sval">${formatCurrencyExact(netIncome)}</span></div>
+          <div class="stat"><span class="slabel">Hipoteca</span><span class="sval">${formatCurrencyExact(monthlyPayment)}</span></div>
+          ${otherDebts > 0 ? `<div class="stat"><span class="slabel">Otras deudas</span><span class="sval">${formatCurrencyExact(otherDebts)}</span></div>` : ""}
+          <div class="stat"><span class="slabel">Deuda total</span><span class="sval">${formatCurrencyExact(totalMonthlyDebt)}</span></div>
+          <div class="stat"><span class="slabel">Máx (${formatPercent(maxDebtPct)})</span><span class="sval">${maxAllowedDebt ? formatCurrencyExact(maxAllowedDebt) : "—"}</span></div>
+          <div class="stat"><span class="slabel">Margen</span><span class="sval" style="color:${surplusColor}">${surplusStr}</span></div>`;
+
+        // Ratio bar
+        const barPct = Math.min(debtRatio, 100);
+        document.getElementById("ratioBarWrap").innerHTML = `
+          <div class="bar-labels"><span>0%</span><span>Ratio de endeudamiento</span><span>100%</span></div>
+          <div class="ratio-bar-bg"><div class="ratio-bar-fill ${status.level}" style="width:${barPct}%"></div></div>
+          <div class="ratio-bar-markers">
+            <div class="marker" style="left:30%"></div><span class="marker-label" style="left:30%">30%</span>
+            <div class="marker" style="left:35%"></div><span class="marker-label" style="left:35%">35%</span>
+            <div class="marker" style="left:${Math.min(barPct, 99)}%"></div>
+            <span class="marker-label" style="left:${Math.min(barPct, 99)}%;font-weight:700">${formatPercent(debtRatio)}</span>
+          </div>`;
+      }
+
+      /** Main forward calculation entry point. */
+      function calcForward() {
+        const inputs = readForwardInputs();
+
+        if (!inputs.price || !inputs.annualRate || !inputs.years) {
+          alert("Rellena al menos el Precio del inmueble, TIN y Plazo.");
+          return;
+        }
+
+        const result = computeForwardMortgage(inputs);
+
+        // ── Render main results ──
+        setDisplay("resultsCard", true);
+        setText("monthlyPayment", formatCurrencyExact(result.monthlyPayment));
+        setText("savingsNeeded", formatCurrencyExact(result.totalCashNeeded));
+        setText("loanAmount", formatCurrencyExact(result.loanAmount));
+        setText("totalInterest", formatCurrencyExact(result.totalInterest));
+        setText("totalRepaid", formatCurrencyExact(result.totalRepaid));
+
+        // ── Savings needed to reach 35% ratio ──
+        renderSavingsFor35(inputs, result);
+
+        // ── Cost breakdown ──
+        renderCostBreakdown(inputs, result);
+
+        // ── Savings comparison ──
+        renderSavingsComparison(inputs.savings, result.totalCashNeeded);
+
+        // ── Affordability banner ──
+        renderAffordabilityBanner({
+          debtRatio: result.debtRatio,
+          netIncome: inputs.netIncome,
+          monthlyPayment: result.monthlyPayment,
+          otherDebts: inputs.otherDebts,
+          totalMonthlyDebt: result.totalMonthlyDebt,
+          maxAllowedDebt: result.maxAllowedDebt,
+          maxDebtPct: inputs.maxDebtPct,
+        });
+
+        document.getElementById("affordBanner").scrollIntoView({ behavior: "smooth" });
+      }
+
+      function renderSavingsFor35(inputs, result) {
+        const { netIncome, otherDebts, annualRate, price } = inputs;
+        const { debtRatio, fixedCosts, totalMonths } = result;
+
+        if (netIncome > 0 && debtRatio > DEBT_RATIO_ACCEPTABLE) {
+          const maxMonthlyAt35 = netIncome * 0.35 - otherDebts;
+          if (maxMonthlyAt35 > 0) {
+            const maxLoanAt35 = calculateMaxLoan(maxMonthlyAt35, annualRate, totalMonths);
+            const totalSavingsNeeded = fixedCosts + (price - maxLoanAt35);
+            setDisplay("savings35Row", true);
+            setText("savings35", formatCurrencyExact(totalSavingsNeeded));
+          } else {
+            setDisplay("savings35Row", true);
+            setText("savings35", "No viable");
+          }
+        } else {
+          setDisplay("savings35Row", false);
+        }
+      }
+
+      function renderCostBreakdown(inputs, result) {
+        const { price, taxRate, notary, registry, otherCosts, savings } = inputs;
+        const { tax, cappedDownPayment, totalCashNeeded } = result;
+
+        setText("bPrice", formatCurrencyExact(price));
+        setText("bTax", `${formatCurrencyExact(tax)} (${(taxRate * 100).toFixed(0)}%)`);
+        setText("bNotary", formatCurrencyExact(notary));
+        setText("bRegistry", formatCurrencyExact(registry));
+        setText("bOther", formatCurrencyExact(otherCosts));
+        setText("bDown", formatCurrencyExact(cappedDownPayment));
+        setText("bTotal", formatCurrencyExact(totalCashNeeded));
+      }
+
+      function renderSavingsComparison(savings, totalCashNeeded) {
+        if (savings > 0) {
+          setDisplay("bSavingsRow", true);
+          setDisplay("bGapRow", true);
+          setText("bSavings", formatCurrencyExact(savings));
+
+          const gap = savings - totalCashNeeded;
+          const gapEl = document.getElementById("bGap");
+          const gapLabel = document.getElementById("bGapLabel");
+
+          if (gap >= 0) {
+            gapLabel.textContent = "Ahorros suficientes ✅";
+            gapEl.textContent = "";
+            gapEl.style.color = "#4ade80";
+          } else {
+            gapLabel.textContent = "Te faltan ahorros";
+            gapEl.textContent = formatCurrencyExact(Math.abs(gap));
+            gapEl.style.color = "#f87171";
+          }
+        } else {
+          setDisplay("bSavingsRow", false);
+          setDisplay("bGapRow", false);
+        }
+      }
+
+      /* ═══════════════════════════════════════════════════════════
+       *  INVERSE CALCULATION
+       *  "Given my income & savings, what's the max I can afford?"
+       * ═══════════════════════════════════════════════════════════ */
+
+      /** Read all inverse-mode form inputs into a structured object. */
+      function readInverseInputs() {
+        return {
+          netIncome: getNumericValue("inv_netIncome"),
+          otherDebts: getNumericValue("inv_otherDebts"),
+          annualRate: getNumericValue("inv_tin") / 100,
+          years: parseInt(document.getElementById("inv_years").value),
+          financedPct: getNumericValue("inv_financedPct") / 100,
+          taxRate: getCheckedRadioValue("inv_tax") / 100,
+          notary: getNumericValue("inv_notary"),
+          registry: getNumericValue("inv_registry"),
+          otherCosts: getNumericValue("inv_otherCosts"),
+          savings: getNumericValue("inv_savings"),
+        };
+      }
+
+      /**
+       * Compute a purchase scenario for a given debt ratio threshold.
+       * Uses ALL savings: if savings exceed what's needed at the income-limited
+       * price, the surplus acts as extra down payment allowing a higher price.
+       *
+       * Two constraints determine the max price:
+       *   1. Income: maxLoan from monthly payment capacity
+       *   2. Savings: must cover down payment + tax + fixed costs
+       *
+       * If savings are abundant, price = (savings + maxLoan - fixedCosts) / (1 + taxRate)
+       * If savings are scarce, price = (savings - fixedCosts) / (1 - financedPct + taxRate)
+       *
+       * @param {object} params - Loan parameters
+       * @param {number} ratioThreshold - Max debt-to-income ratio (decimal)
+       * @param {boolean} ignoreDebts - Whether to ignore existing debts in ratio calc
+       * @returns {object|null} Scenario details, or null if not viable
+       */
+      function computeScenario(params, ratioThreshold, ignoreDebts) {
+        const { netIncome, otherDebts, annualRate, totalMonths,
+                financedPct, taxRate, fixedCosts, savings } = params;
+
+        const maxMonthly = ignoreDebts
+          ? netIncome * ratioThreshold
+          : netIncome * ratioThreshold - otherDebts;
+
+        if (maxMonthly <= 0) return null;
+
+        const maxLoan = calculateMaxLoan(maxMonthly, annualRate, totalMonths);
+
+        // Price if limited by bank's financing percentage (standard case)
+        const incomeLimitedPrice = maxLoan / financedPct;
+
+        // Price if savings are used as extra down payment beyond financedPct
+        // Formula: savings = (price - maxLoan) + price × taxRate + fixedCosts
+        //        → price = (savings + maxLoan - fixedCosts) / (1 + taxRate)
+        const savingsBoostPrice = (savings + maxLoan - fixedCosts) / (1 + taxRate);
+
+        // Price if limited purely by savings (bank finances financedPct)
+        const ownFundsFactor = (1 - financedPct) + taxRate;
+        const savingsOnlyPrice = (savings - fixedCosts) / ownFundsFactor;
+
+        // Determine the binding constraint:
+        // - If savings can't even cover the standard income-limited price → savings-limited
+        // - If savings exceed what's needed → use surplus as extra down payment
+        let price, loan, limitedBy;
+
+        if (savingsOnlyPrice <= incomeLimitedPrice) {
+          // Savings are the bottleneck (can't afford the income-limited price)
+          price = savingsOnlyPrice;
+          loan = price * financedPct;
+          limitedBy = "savings";
+        } else {
+          // Savings exceed base need: use surplus to buy a pricier property
+          // Loan stays at maxLoan, extra savings cover the bigger down payment
+          price = savingsBoostPrice;
+          loan = maxLoan;
+          // Verify bank is OK with this LTV (loan ≤ financedPct × price)
+          if (loan > financedPct * price) {
+            // Shouldn't happen when savings > base need, but safeguard
+            price = incomeLimitedPrice;
+            loan = price * financedPct;
+          }
+          limitedBy = "income";
+        }
+
+        if (price <= 0) return null;
+
+        const downPayment = price - loan;
+        const tax = price * taxRate;
+        const totalCash = downPayment + tax + fixedCosts;
+        const monthly = calculateMonthlyPayment(loan, annualRate, totalMonths);
+        const ratio = ((monthly + otherDebts) / netIncome) * 100;
+        const totalRepaid = monthly * totalMonths;
+        const totalInterest = totalRepaid - loan;
+
+        return {
+          price, loan, downPayment, tax, totalCash,
+          monthly, totalRepaid, totalInterest, ratio,
+          limitedBy, fixedCosts,
+          savingsGap: totalCash - savings,
+        };
+      }
+
+      /** Generate HTML for a single scenario card. */
+      function buildScenarioCardHTML(scenario, label, cssClass, taxRate, isRecommended) {
+        if (!scenario) return "";
+
+        let statusMsg;
+        if (scenario.limitedBy === "savings") {
+          statusMsg = '<div style="margin-top:8px;font-size:0.78rem;font-weight:600;">🏦 Limitado por tus ahorros</div>';
+        } else if (scenario.savingsGap > 1) {
+          statusMsg = `<div style="margin-top:8px;font-size:0.78rem;color:#f87171;font-weight:600;">⚠️ Te faltan ${formatCurrency(scenario.savingsGap)} de ahorros</div>`;
+        } else {
+          statusMsg = '<div style="margin-top:8px;font-size:0.78rem;color:#4ade80;font-weight:600;">✅ Tus ahorros son suficientes</div>';
+        }
+
+        return `
+          <div class="scenario-card ${cssClass}">
+            ${isRecommended ? '<div class="sc-ribbon">RECOMENDADO</div>' : ""}
+            <div class="sc-badge">${label}</div>
+            <div class="sc-price">${formatCurrency(scenario.price)}</div>
+            <div class="sc-row"><span>Préstamo</span><span class="sc-val">${formatCurrency(scenario.loan)}</span></div>
+            <div class="sc-row"><span>Entrada</span><span class="sc-val">${formatCurrency(scenario.downPayment)}</span></div>
+            <div class="sc-row"><span>Impuestos (${(taxRate * 100).toFixed(0)}%)</span><span class="sc-val">${formatCurrency(scenario.tax)}</span></div>
+            <div class="sc-row"><span>Gastos (notaría, registro…)</span><span class="sc-val">${formatCurrency(scenario.fixedCosts)}</span></div>
+            <div class="sc-row"><span>Total dinero necesario</span><span class="sc-val">${formatCurrency(scenario.totalCash)}</span></div>
+            <hr style="border:none;border-top:1px solid rgba(255,255,255,0.15);margin:8px 0">
+            <div class="sc-row"><span>Cuota mensual</span><span class="sc-val">${formatCurrencyExact(scenario.monthly)}</span></div>
+            <div class="sc-row"><span>Ratio endeudamiento</span><span class="sc-val">${formatPercent(scenario.ratio)}</span></div>
+            <div class="sc-row"><span>Total intereses</span><span class="sc-val">${formatCurrency(scenario.totalInterest)}</span></div>
+            ${statusMsg}
+          </div>`;
+      }
+
+      /** Main inverse calculation entry point. */
+      function calcInverse(autoTriggered) {
+        const inputs = readInverseInputs();
+
+        if (!inputs.netIncome || !inputs.annualRate || !inputs.years) {
+          if (!autoTriggered) alert("Rellena al menos Ingresos netos mensuales, TIN y Plazo.");
+          return;
+        }
+        if (!inputs.savings) {
+          if (!autoTriggered) alert("Introduce tus ahorros disponibles para calcular.");
+          return;
+        }
+
+        const totalMonths = inputs.years * MONTHS_PER_YEAR;
+        const fixedCosts = inputs.notary + inputs.registry + inputs.otherCosts;
+
+        const scenarioParams = { ...inputs, totalMonths, fixedCosts };
+
+        // Three scenarios: conservative, recommended, maximum
+        // All scenarios now fully utilize savings (surplus = extra down payment)
+        const conservative = computeScenario(scenarioParams, SCENARIO_CONSERVATIVE_RATIO, false);
+        const recommended = computeScenario(scenarioParams, SCENARIO_RECOMMENDED_RATIO, false);
+        const maximum = computeScenario(scenarioParams, SCENARIO_MAXIMUM_RATIO, true);
+
+        // ── Render results ──
+        const resultsEl = document.getElementById("inverseResults");
+        resultsEl.style.display = "block";
+
+        document.getElementById("scenarioGrid").innerHTML =
+          buildScenarioCardHTML(conservative, "🟢 Conservador (30%)", "conservative", inputs.taxRate, false) +
+          buildScenarioCardHTML(recommended, "🟡 Recomendado (35%)", "recommended", inputs.taxRate, true) +
+          buildScenarioCardHTML(maximum, "🔴 Máximo (40%)", "maximum", inputs.taxRate, false);
+
+        document.getElementById("assumptionsBox").innerHTML = `
+          <h3>📌 Supuestos utilizados</h3>
+          <div class="arow"><span>Ingresos netos mensuales</span><span class="aval">${formatCurrencyExact(inputs.netIncome)}</span></div>
+          <div class="arow"><span>Otras deudas mensuales</span><span class="aval">${formatCurrencyExact(inputs.otherDebts)}</span></div>
+          <div class="arow"><span>Ahorros disponibles</span><span class="aval">${formatCurrencyExact(inputs.savings)}</span></div>
+          <div class="arow"><span>TIN (tipo anual)</span><span class="aval">${(inputs.annualRate * 100).toFixed(2)}%</span></div>
+          <div class="arow"><span>Plazo</span><span class="aval">${inputs.years} años (${totalMonths} cuotas)</span></div>
+          <div class="arow"><span>Porcentaje financiado</span><span class="aval">${(inputs.financedPct * 100).toFixed(0)}%</span></div>
+          <div class="arow"><span>Impuesto de transmisiones</span><span class="aval">${(inputs.taxRate * 100).toFixed(0)}%</span></div>
+          <div class="arow"><span>Notaría + Registro + Otros</span><span class="aval">${formatCurrencyExact(fixedCosts)}</span></div>`;
+
+        if (!autoTriggered) resultsEl.scrollIntoView({ behavior: "smooth" });
+      }
+
+      /* ── Auto-recalculate inverse mode on input changes ──────── */
+      document.getElementById("inversePanel").addEventListener("input", () => {
+        const hasRequiredFields =
+          getNumericValue("inv_netIncome") &&
+          getNumericValue("inv_tin") &&
+          parseInt(document.getElementById("inv_years").value) &&
+          getNumericValue("inv_savings");
+
+        if (hasRequiredFields) calcInverse(true);
+      });
+    </script>
+  </body>
+</html>
