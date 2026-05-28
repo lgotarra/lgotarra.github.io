@@ -105,6 +105,10 @@
         background: linear-gradient(135deg, #d97706, #b45309);
       }
 
+      .card-criminalitat::before {
+        background: linear-gradient(135deg, #dc2626, #991b1b);
+      }
+
       .card:hover {
         transform: translateY(-4px);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
@@ -156,6 +160,11 @@
       .card-calculator .card-badge {
         background: #fef3c7;
         color: #d97706;
+      }
+
+      .card-criminalitat .card-badge {
+        background: #fee2e2;
+        color: #dc2626;
       }
 
       .card-arrow {
@@ -246,6 +255,18 @@
           <div class="card-title">Calculadora Hipotecaria</div>
           <p class="card-description">Simulador de hipoteca: calcula cuota mensual, ratio de endeudamiento, o descubre el precio máximo que puedes permitirte.</p>
           <span class="card-badge">Simulador</span>
+        </a>
+
+        <a href="criminalitat.html" class="card card-criminalitat">
+          <div class="card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </div>
+          <span class="card-icon">🔍</span>
+          <div class="card-title">Criminalitat</div>
+          <p class="card-description">Ranking de criminalidad por municipios de Barcelona 2025: índices, variación interanual y gráficos comparativos.</p>
+          <span class="card-badge">Seguridad</span>
         </a>
       </div>
 
